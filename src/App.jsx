@@ -67,6 +67,33 @@ function AuthShell() {
       }
     }
     detectTeams();
+
+    // Handle Google or GitHub login redirect with JWT/profile in query params
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('jwt') && params.has('profile')) {
+      try {
+        const profile = JSON.parse(decodeURIComponent(params.get('profile')));
+        // Detect provider from profile fields
+        let provider = null;
+        let user = {};
+        if (profile.login) {
+          // GitHub
+          provider = { id: 'github', name: 'GitHub' };
+          user = { name: profile.name || profile.login, email: profile.email || '', login: profile.login };
+        } else if (profile.email && profile.name) {
+          // Google
+          provider = { id: 'google', name: 'Google' };
+          user = { name: profile.name, email: profile.email };
+        }
+        setAuthState({ status: 'signedin', error: null, user });
+        setSelectedProvider(provider);
+        // Remove query params and redirect to /app
+        window.history.replaceState({}, document.title, window.location.pathname);
+        navigate('/app', { replace: true });
+      } catch (e) {
+        // ignore
+      }
+    }
   }, []);
 
   // MSAL instance
