@@ -102,9 +102,9 @@ function AuthShell() {
         }
       }
     } else if (provider.id === "google") {
-      // Real Google OAuth via backend
+      // Real Google OAuth via Vercel serverless
       try {
-        const urlResp = await fetch(`${API_BASE}/auth/google/url`).then(r => r.json());
+        const urlResp = await fetch(`${API_BASE}/auth-google-url`).then(r => r.json());
         const popup = window.open(urlResp.url, 'google-oauth', 'width=600,height=700');
         const handler = (event) => {
           if (event.data?.type === 'oauth-success') {
@@ -127,9 +127,9 @@ function AuthShell() {
         setAuthState({ status: 'error', error: e.message, user: null });
       }
     } else if (provider.id === "github") {
-      // Real GitHub OAuth via backend
+      // Real GitHub OAuth via Vercel serverless
       try {
-        const urlResp = await fetch(`${API_BASE}/auth/github/url`).then(r => r.json());
+        const urlResp = await fetch(`${API_BASE}/auth-github-url`).then(r => r.json());
         const popup = window.open(urlResp.url, 'github-oauth', 'width=600,height=700');
         const handler = (event) => {
           if (event.data?.type === 'oauth-success') {
@@ -250,12 +250,11 @@ export default function App() {
  * Conditional logic:
  * - Uses Teams SDK to detect environment and restricts SSO options in Teams.
  * - Uses MSAL for browser auth (popup) and Teams SSO API inside Teams.
- * - Google/GitHub real OAuth via backend broker server (server.js).
+ * - Google/GitHub/Microsoft real OAuth via Vercel serverless API endpoints.
  * - Email signup simulated for demo.
  * - Landing page route /app after successful login.
  *
  * Deployment:
- * - Run backend server (node server.js) alongside Vite dev server; set VITE_API_BASE.
- * - For production, build frontend (npm run build) and serve dist/ by Express or a static host plus secure auth broker.
- * - Configure Azure AD + Teams manifest as documented; add backend domain to validDomains.
+ * - For local dev, use Vite dev server and Vercel CLI for API routes. For prod, deploy to Vercel.
+ * - Configure Azure AD + Teams manifest as documented; add Vercel domain to validDomains.
  */

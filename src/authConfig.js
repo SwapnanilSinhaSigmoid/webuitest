@@ -15,7 +15,7 @@ export const msalConfig = {
 
 export const azureScopes = ["User.Read"]; // Example Graph scope
 
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000"; // Backend auth broker
+export const API_BASE = "/api"; // Vercel serverless API base
 
 // SSO Providers configuration for browser
 
@@ -49,6 +49,6 @@ export const TEAMS_SSO_PROVIDER = SSO_PROVIDERS[0];
  * Deployment Considerations:
  * - Register your app in Azure AD and configure redirect URIs for both browser and Teams.
  * - For Teams, ensure the manifest.json includes the correct webApplicationInfo and validDomains.
- * - Set environment variables for server: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, JWT_SECRET.
- * - See README for sample manifest and registration steps.
+ * - Set environment variables for Vercel: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, MS_CLIENT_ID, MS_CLIENT_SECRET, JWT_SECRET, and all redirect URIs.
+ * - For Vercel, backend routes are in /api/*. See README for serverless deployment steps.
  */
