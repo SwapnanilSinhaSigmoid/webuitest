@@ -8,12 +8,19 @@ export default async function handler(req, res) {
   }
   try {
     const { code, state } = req.query;
-  const result = await handleGoogleCallback(code, state);
-  // Redirect to frontend with JWT and profile in query params
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  const redirectUrl = `${frontendUrl}?jwt=${encodeURIComponent(result.jwt)}&profile=${encodeURIComponent(JSON.stringify(result.profile))}`;
-  res.writeHead(302, { Location: redirectUrl });
-  res.end();
+    const result = await handleGoogleCallback(code, state);
+    // Serve HTML that posts message to opener and closes popup, or redirects if no opener
+    const jwt = result.jwt;
+    const profile = JSON.stringify(result.profile);
+    res.setHeader('Content-Type', 'text/html');
+    res.end(`<!DOCTYPE html><html><body><script>
+      if (window.opener) {
+        window.opener.postMessage({ type: 'oauth-success', token: '${jwt}', profile: ${JSON.stringify(profile)} }, window.opener.location.origin);
+        window.close();
+      } else {
+        window.location = '${process.env.FRONTEND_URL || "http://localhost:5173"}?jwt=${encodeURIComponent(jwt)}&profile=${encodeURIComponent(profile)}';
+      }
+    </script></body></html>`);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
