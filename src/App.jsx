@@ -24,6 +24,8 @@ function useWindowSize() {
 
 function LandingPage({ user, provider, onSignOut }) {
   // Fullscreen landing page after login
+  // Prefer name, fallback to login for GitHub
+  const displayName = user?.name || user?.login || user?.username || '';
   return (
     <div style={{
       minHeight: '100vh',
@@ -35,9 +37,12 @@ function LandingPage({ user, provider, onSignOut }) {
       background: 'linear-gradient(135deg, #f3f2f1 0%, #e6e6e6 100%)',
     }}>
       <Stack tokens={{ childrenGap: 24 }} horizontalAlign="center" style={{ maxWidth: 480, width: '100%' }}>
-        <Text variant="xxLarge">Welcome, {user?.name || user?.username}!</Text>
+        <Text variant="xxLarge">Welcome, {displayName}!</Text>
         <Text variant="large">You signed in with: {provider?.name}</Text>
         <Text variant="medium">Email: {user?.email || user?.userName}</Text>
+        {user?.login && !user?.name && (
+          <Text variant="medium">GitHub login: {user.login}</Text>
+        )}
         <a href="#signout" onClick={(e) => { e.preventDefault(); onSignOut(); }} style={{ color: '#0078d4', fontWeight: 500, fontSize: 18 }}>Sign out</a>
       </Stack>
     </div>
