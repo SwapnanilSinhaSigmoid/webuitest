@@ -1,5 +1,5 @@
 // Vercel Serverless Function: /api/auth-microsoft-callback.js
-import { handleMicrosoftCallback } from '../serverless-helpers/microsoft';
+import { handleMicrosoftCallback } from '../serverless-helpers/microsoft.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

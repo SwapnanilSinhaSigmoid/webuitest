@@ -5,7 +5,7 @@ export const msalConfig = {
   auth: {
   clientId: "79922eb7-096e-46dc-8aa9-af759282e833", // Azure AD app client ID
   authority: "https://login.microsoftonline.com/common", // Azure AD tenant (multi-tenant)
-    redirectUri: window.location.origin, // For browser; Teams may override
+  redirectUri: "https://webui-test.vercel.app/api/auth-microsoft-callback", // For Vercel deployment
   },
   cache: {
     cacheLocation: "sessionStorage",

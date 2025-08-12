@@ -1,5 +1,5 @@
 // Vercel Serverless Function: /api/auth-google-callback.js
-import { handleGoogleCallback } from '../serverless-helpers/google';
+import { handleGoogleCallback } from '../serverless-helpers/google.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
