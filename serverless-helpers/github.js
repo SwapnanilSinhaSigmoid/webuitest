@@ -37,12 +37,26 @@ export async function handleGitHubCallback(code, state) {
     headers: { 'Authorization': `token ${tokenData.access_token}` }
   });
   const profile = await userRes.json();
+
+  // If email is not present, fetch from /user/emails
+  if (!profile.email) {
+    const emailsRes = await fetch('https://api.github.com/user/emails', {
+      headers: { 'Authorization': `token ${tokenData.access_token}` }
+    });
+    const emails = await emailsRes.json();
+    if (Array.isArray(emails)) {
+      const primary = emails.find(e => e.primary && e.verified) || emails[0];
+      if (primary) profile.email = primary.email;
+    }
+  }
+
   // Issue our own JWT
   const jwtToken = jwt.sign({
     provider: 'github',
     login: profile.login,
     name: profile.name,
-    avatar_url: profile.avatar_url
+    avatar_url: profile.avatar_url,
+    email: profile.email || ''
   }, JWT_SECRET, { expiresIn: '1h' });
   return { jwt: jwtToken, profile };
 }
