@@ -3,8 +3,8 @@
 
 export const msalConfig = {
   auth: {
-    clientId: "<YOUR_AZURE_AD_CLIENT_ID>", // Azure AD app client ID
-    authority: "https://login.microsoftonline.com/<YOUR_TENANT_ID>", // Azure AD tenant
+  clientId: "79922eb7-096e-46dc-8aa9-af759282e833", // Azure AD app client ID
+  authority: "https://login.microsoftonline.com/common", // Azure AD tenant (multi-tenant)
     redirectUri: window.location.origin, // For browser; Teams may override
   },
   cache: {
