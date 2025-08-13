@@ -1,3 +1,40 @@
+.sso-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 18px;
+  width: 100%;
+  justify-content: center;
+}
+
+.sso-provider-tile {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.12s, box-shadow 0.12s;
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 80px;
+  box-shadow: 0 1px 6px #0001;
+  background: #fafbfc;
+  width: 100%;
+  max-width: 140px;
+}
+
+.sso-provider-tile:hover {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 4px 16px #0078d422;
+}
+
+@media (max-width: 600px) {
+  .sso-selector-grid {
+    gap: 12px;
+  }
+  .sso-provider-tile {
+    padding: 6px;
+    font-size: 14px;
+  }
+}
 #root {
   max-width: 1280px;
   margin: 0 auto;

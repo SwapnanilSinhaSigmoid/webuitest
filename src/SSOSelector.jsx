@@ -12,10 +12,49 @@ import { Persona, PersonaSize, Stack, Text, Image, ImageFit } from "@fluentui/re
 export default function SSOSelector({ isInTeams, onSelect }) {
   const providers = isInTeams ? [TEAMS_SSO_PROVIDER] : SSO_PROVIDERS;
 
+  // Responsive icon size based on viewport width
+  const [windowSize, setWindowSize] = React.useState({ width: window.innerWidth, height: window.innerHeight });
+  React.useEffect(() => {
+    const onResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const iconSize = Math.max(40, Math.min(80, Math.floor(windowSize.width / (isInTeams ? 3 : 6))));
+  const isMobile = windowSize.width < 600;
+  const isPortrait = windowSize.height > windowSize.width;
+
+  // Portrait: vertical grid, else horizontal/grid
+  const gridStyle = isPortrait
+    ? {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: isMobile ? 14 : 24,
+        marginTop: isMobile ? 18 : 32,
+        width: isMobile ? '100%' : 'auto',
+        alignItems: 'center',
+      }
+    : {
+        display: 'grid',
+        gridTemplateColumns: `repeat(${providers.length}, minmax(90px, 1fr))`,
+        gap: isMobile ? 18 : 35,
+        marginTop: isMobile ? 18 : 32,
+        width: isMobile ? '100%' : 'auto',
+        justifyContent: 'center',
+      };
+
   return (
-    <Stack tokens={{ childrenGap: 32 }} horizontalAlign="center" style={{ marginTop: 32 }}>
-      <Text variant="xLarge">Sign in with:</Text>
-      <Stack horizontal tokens={{ childrenGap: 35 }}>
+    <div
+      style={{
+        marginTop: isMobile ? 16 : 32,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <Text variant={isMobile ? "large" : "xLarge"}>Sign in with:</Text>
+      <div style={gridStyle}>
         {providers.map((provider) => (
           <div
             key={provider.id}
@@ -27,10 +66,12 @@ export default function SSOSelector({ isInTeams, onSelect }) {
               alignItems: "center",
               transition: "transform 0.12s, box-shadow 0.12s",
               borderRadius: 12,
-              padding: 8,
-              minWidth: 100,
+              padding: isMobile ? 6 : 12,
+              minWidth: 80,
               boxShadow: "0 1px 6px #0001",
               background: "#fafbfc",
+              width: '100%',
+              maxWidth: 140,
             }}
             onMouseOver={e => {
               e.currentTarget.style.transform = "translateY(-4px) scale(1.06)";
@@ -44,15 +85,15 @@ export default function SSOSelector({ isInTeams, onSelect }) {
             <Image
               src={provider.logo}
               alt={provider.name}
-              width={56}
-              height={56}
+              width={iconSize}
+              height={iconSize}
               imageFit={ImageFit.contain}
-              style={{ borderRadius: 8, marginBottom: 8, background: '#fff' }}
+              style={{ borderRadius: 8, marginBottom: 8, background: '#fff', width: iconSize, height: iconSize }}
             />
-            <Text style={{ textAlign: "center", fontWeight: 500, fontSize: 16, marginTop: 2 }}>{provider.name}</Text>
+            <Text style={{ textAlign: "center", fontWeight: 500, fontSize: isMobile ? 14 : 16, marginTop: 2 }}>{provider.name}</Text>
           </div>
         ))}
-      </Stack>
-    </Stack>
+      </div>
+    </div>
   );
 }

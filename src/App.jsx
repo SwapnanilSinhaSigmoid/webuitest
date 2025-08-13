@@ -268,6 +268,9 @@ function AuthShell() {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    document.title = 'Sample SSO';
+  }, []);
   return (
     <BrowserRouter>
       <Routes>
