@@ -1,34 +1,35 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.19",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.1",
-  "id": "79922eb7-096e-46dc-8aa9-af759282e833",
+  "id": "4f60d7e3-8f07-4f0e-861a-6ea699639421",
   "developer": {
-    "name": "SSO Sample Developer",
+    "name": "Satya",
     "websiteUrl": "http://localhost:5173",
     "privacyUrl": "http://localhost:5173/privacy",
-    "termsOfUseUrl": "http://localhost:5173/terms"
+    "termsOfUseUrl": "http://localhost:5173/tos"
   },
   "icons": {
     "color": "icon-color.png",
     "outline": "icon-outline.png"
   },
   "name": {
-    "short": "SSO Sample (Dev)",
+    "short": "SSO Login (Dev)",
     "full": "Teams SSO Authentication Sample - Development"
   },
   "description": {
-    "short": "Sample app demonstrating SSO in Teams (Development)",
-    "full": "A sample application that demonstrates Single Sign-On (SSO) authentication in Microsoft Teams using Azure AD - Development Version"
+    "short": "SSO Testing (Development)",
+    "full": "SSO Testing - Development Version"
   },
-  "accentColor": "#FFFFFF",
+  "accentColor": "#ffffff",
   "staticTabs": [
     {
-      "entityId": "index",
-      "name": "SSO Login",
+      "entityId": "adaptive-cards-designer",
+      "name": "Card Designer",
       "contentUrl": "http://localhost:5173",
       "websiteUrl": "http://localhost:5173",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     }
   ],
   "permissions": ["identity", "messageTeamMembers"],
@@ -38,7 +39,7 @@
     "graph.microsoft.com"
   ],
   "webApplicationInfo": {
-    "id": "79922eb7-096e-46dc-8aa9-af759282e833",
-    "resource": "api://79922eb7-096e-46dc-8aa9-af759282e833"
+    "id": "4f60d7e3-8f07-4f0e-861a-6ea699639421",
+    "resource": "api://4f60d7e3-8f07-4f0e-861a-6ea699639421"
   }
 }

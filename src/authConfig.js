@@ -16,7 +16,7 @@ const getRedirectUri = () => {
 
 export const msalConfig = {
   auth: {
-  clientId: "79922eb7-096e-46dc-8aa9-af759282e833", // Azure AD app client ID
+  clientId: "4f60d7e3-8f07-4f0e-861a-6ea699639421", // Azure AD app client ID (matches Teams manifest)
   authority: "https://login.microsoftonline.com/common", // Azure AD tenant (multi-tenant)
   redirectUri: getRedirectUri(), // Environment-aware redirect URI
   },

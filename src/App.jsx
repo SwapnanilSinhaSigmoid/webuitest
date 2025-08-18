@@ -155,7 +155,7 @@ function AuthShell() {
           
           // Request token for the specific application resource
           const token = await microsoftTeams.authentication.getAuthToken({
-            resources: [`api://79922eb7-096e-46dc-8aa9-af759282e833`],
+            resources: [`api://4f60d7e3-8f07-4f0e-861a-6ea699639421`],
             silent: false,
             claims: JSON.stringify({
               "id_token": {
