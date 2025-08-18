@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { msalConfig, API_BASE, azureScopes } from "./authConfig";
 import SSOSelector from "./SSOSelector";
+import EmailModal from "./EmailModal";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { initializeIcons, Stack, Text, Spinner, MessageBar, MessageBarType } from "@fluentui/react";
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
@@ -54,6 +55,7 @@ function AuthShell() {
   const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState({ status: "signedout", error: null, user: null });
   const [selectedProvider, setSelectedProvider] = useState(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const windowSize = useWindowSize();
   const navigate = useNavigate();
 
@@ -110,12 +112,22 @@ function AuthShell() {
     setAuthState({ status: "loading", error: null, user: null });
     if (provider.id === "microsoft") {
       if (isInTeams) {
-        // For Teams, fall back to regular MSAL popup since SSO configuration is complex
+        // For Teams, try popup first, fall back to redirect if popup fails
         try {
           await msalInstance.initialize();
-          const loginResponse = await msalInstance.loginPopup({ scopes: azureScopes });
-          setAuthState({ status: "signedin", error: null, user: loginResponse.account });
-          navigate('/app');
+          try {
+            // Try popup first (works in Teams web)
+            const loginResponse = await msalInstance.loginPopup({ scopes: azureScopes });
+            setAuthState({ status: "signedin", error: null, user: loginResponse.account });
+            navigate('/app');
+          } catch (popupError) {
+            // If popup fails (Teams desktop), use redirect
+            console.log("Popup failed, trying redirect:", popupError);
+            await msalInstance.loginRedirect({ 
+              scopes: azureScopes,
+              redirectUri: window.location.origin + "/api/auth-microsoft-callback"
+            });
+          }
         } catch (err) {
           console.error("Teams MSAL error:", err);
           setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
@@ -182,16 +194,8 @@ function AuthShell() {
         setAuthState({ status: 'error', error: e.message, user: null });
       }
     } else if (provider.id === "email") {
-      // Simulate email sign up: prompt for email and "register"
-      const email = window.prompt("Enter your email to sign up:");
-      if (email && email.includes("@")) {
-        setTimeout(() => {
-          setAuthState({ status: "signedin", error: null, user: { name: "Email User", email } });
-          navigate('/app');
-        }, 800);
-      } else {
-        setAuthState({ status: "error", error: "Please enter a valid email address.", user: null });
-      }
+      // Open email modal instead of browser prompt for Teams compatibility
+      setIsEmailModalOpen(true);
     } else {
       // Simulate other SSO providers (Google, GitHub)
       setTimeout(() => {
@@ -200,6 +204,21 @@ function AuthShell() {
       }, 1000);
     }
   }, [isInTeams, msalInstance]);
+
+  // Handle redirect response for Teams authentication
+  useEffect(() => {
+    if (isInTeams && msalInstance) {
+      msalInstance.handleRedirectPromise().then((response) => {
+        if (response) {
+          setAuthState({ status: "signedin", error: null, user: response.account });
+          navigate('/app');
+        }
+      }).catch((err) => {
+        console.error("Redirect response error:", err);
+        setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
+      });
+    }
+  }, [isInTeams, msalInstance, navigate]);
 
   // Sign out logic
   const handleSignOut = useCallback(() => {
@@ -210,6 +229,25 @@ function AuthShell() {
     }
     navigate('/');
   }, [selectedProvider, isInTeams, msalInstance]);
+
+  // Email modal handlers
+  const handleEmailSubmit = useCallback((email) => {
+    setIsEmailModalOpen(false);
+    if (email && email.includes("@")) {
+      setAuthState({ status: "loading", error: null, user: null });
+      setTimeout(() => {
+        setAuthState({ status: "signedin", error: null, user: { name: "Email User", email } });
+        navigate('/app');
+      }, 800);
+    } else {
+      setAuthState({ status: "error", error: "Please enter a valid email address.", user: null });
+    }
+  }, [navigate]);
+
+  const handleEmailCancel = useCallback(() => {
+    setIsEmailModalOpen(false);
+    setSelectedProvider(null);
+  }, []);
 
   // Responsive style
   // Center login card in viewport
@@ -261,6 +299,11 @@ function AuthShell() {
       {authState.status === "signedin" && (
         <LandingPage user={authState.user} provider={selectedProvider} onSignOut={handleSignOut} />
       )}
+      <EmailModal 
+        isOpen={isEmailModalOpen}
+        onSubmit={handleEmailSubmit}
+        onCancel={handleEmailCancel}
+      />
     </>
   );
 }
