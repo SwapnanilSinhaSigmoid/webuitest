@@ -112,12 +112,12 @@ function AuthShell() {
       if (isInTeams) {
         // Use Teams SSO
         try {
-          const result = await microsoftTeams.authentication.authenticate({
-            url: window.location.origin + "/teams-sso.html", // Placeholder for Teams SSO popup
-            width: 600,
-            height: 535,
+          const token = await microsoftTeams.authentication.getAuthToken({
+            resources: [] // Use default resources
           });
-          setAuthState({ status: "signedin", error: null, user: { name: result.name, email: result.preferredUserName } });
+          // Decode the token to get user info (or call Graph API)
+          const userInfo = { name: "Teams User", email: "user@teams.com" }; // Placeholder - you'd decode the token or call Graph API
+          setAuthState({ status: "signedin", error: null, user: userInfo });
           navigate('/app');
         } catch (err) {
           setAuthState({ status: "error", error: err.message, user: null });
