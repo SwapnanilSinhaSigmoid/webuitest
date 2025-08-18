@@ -5,13 +5,11 @@
 const getRedirectUri = () => {
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;
-    // For localhost development, use simple redirect to avoid API callback complexity
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return `${origin}/`;
-    }
+    // Always use root path for redirect to avoid complications
+    return `${origin}/`;
   }
-  // For production, use the API callback endpoint
-  return "https://webui-test.vercel.app/api/auth-microsoft-callback";
+  // Default fallback
+  return "https://webui-test.vercel.app/";
 };
 
 export const msalConfig = {
