@@ -9,6 +9,8 @@
 <body>
   <h2>Signing you in with Teams SSO...</h2>
   <script>
+    // Log the popup URL for debugging
+    console.log('Teams SSO popup URL:', window.location.href);
     // Initialize Teams SDK
     microsoftTeams.app.initialize().then(() => {
       // Get SSO token
