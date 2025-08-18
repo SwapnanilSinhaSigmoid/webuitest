@@ -110,17 +110,15 @@ function AuthShell() {
     setAuthState({ status: "loading", error: null, user: null });
     if (provider.id === "microsoft") {
       if (isInTeams) {
-        // Use Teams SSO
+        // For Teams, fall back to regular MSAL popup since SSO configuration is complex
         try {
-          const token = await microsoftTeams.authentication.getAuthToken({
-            resources: [] // Use default resources
-          });
-          // Decode the token to get user info (or call Graph API)
-          const userInfo = { name: "Teams User", email: "user@teams.com" }; // Placeholder - you'd decode the token or call Graph API
-          setAuthState({ status: "signedin", error: null, user: userInfo });
+          await msalInstance.initialize();
+          const loginResponse = await msalInstance.loginPopup({ scopes: azureScopes });
+          setAuthState({ status: "signedin", error: null, user: loginResponse.account });
           navigate('/app');
         } catch (err) {
-          setAuthState({ status: "error", error: err.message, user: null });
+          console.error("Teams MSAL error:", err);
+          setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
         }
       } else {
         // Use MSAL for browser
