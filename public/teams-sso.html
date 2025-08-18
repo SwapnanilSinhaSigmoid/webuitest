@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teams SSO</title>
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+</head>
+<body>
+  <h2>Signing you in with Teams SSO...</h2>
+  <script>
+    // Initialize Teams SDK
+    microsoftTeams.app.initialize().then(() => {
+      // Get SSO token
+      microsoftTeams.authentication.getAuthToken({
+        successCallback: (token) => {
+          // Notify parent window (your React app) of success
+          microsoftTeams.authentication.notifySuccess(token);
+        },
+        failureCallback: (error) => {
+          microsoftTeams.authentication.notifyFailure(error);
+        },
+        resources: [] // Optionally specify resource URLs
+      });
+    }).catch((err) => {
+      microsoftTeams.authentication.notifyFailure("Teams SDK init failed: " + err);
+    });
+  </script>
+</body>
+</html>

@@ -10,7 +10,10 @@ import { Persona, PersonaSize, Stack, Text, Image, ImageFit } from "@fluentui/re
  * @param {function} props.onSelect - Callback when an SSO provider is selected
  */
 export default function SSOSelector({ isInTeams, onSelect }) {
-  const providers = isInTeams ? [TEAMS_SSO_PROVIDER] : SSO_PROVIDERS;
+  // In Teams, allow both Microsoft and Email login for preview
+  const providers = isInTeams
+    ? [TEAMS_SSO_PROVIDER, SSO_PROVIDERS.find(p => p.id === 'email')]
+    : SSO_PROVIDERS;
 
   // Responsive icon size based on viewport width
   const [windowSize, setWindowSize] = React.useState({ width: window.innerWidth, height: window.innerHeight });
