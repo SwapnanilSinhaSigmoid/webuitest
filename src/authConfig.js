@@ -1,11 +1,24 @@
 // MSAL and Teams authentication configuration for both browser and Teams environments.
 // Replace placeholder values with your Azure AD app registration details.
 
+// Determine the correct redirect URI based on environment
+const getRedirectUri = () => {
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    // For localhost development, use simple redirect to avoid API callback complexity
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return `${origin}/`;
+    }
+  }
+  // For production, use the API callback endpoint
+  return "https://webui-test.vercel.app/api/auth-microsoft-callback";
+};
+
 export const msalConfig = {
   auth: {
   clientId: "79922eb7-096e-46dc-8aa9-af759282e833", // Azure AD app client ID
   authority: "https://login.microsoftonline.com/common", // Azure AD tenant (multi-tenant)
-  redirectUri: window.location.origin + "/", // Use current origin for redirect
+  redirectUri: getRedirectUri(), // Environment-aware redirect URI
   },
   cache: {
     cacheLocation: "sessionStorage",

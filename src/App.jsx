@@ -190,16 +190,26 @@ function AuthShell() {
           }
         }
       } else {
-        // Use MSAL for browser with popup to avoid iframe issues
+        // Use MSAL for browser - prefer redirect for production, popup for local dev
         try {
           const loginRequest = {
             scopes: azureScopes,
             prompt: "select_account"
           };
           
-          const loginResponse = await msalInstance.loginPopup(loginRequest);
-          setAuthState({ status: "signedin", error: null, user: loginResponse.account });
-          navigate('/app');
+          // Use redirect for production (when using API callback), popup for localhost
+          const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          
+          if (isLocalDev) {
+            // Use popup for local development
+            const loginResponse = await msalInstance.loginPopup(loginRequest);
+            setAuthState({ status: "signedin", error: null, user: loginResponse.account });
+            navigate('/app');
+          } else {
+            // Use redirect for production
+            await msalInstance.loginRedirect(loginRequest);
+            // The redirect will handle the response automatically
+          }
         } catch (err) {
           console.error("Browser MSAL error:", err);
           setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
