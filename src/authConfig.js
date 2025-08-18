@@ -5,12 +5,18 @@ export const msalConfig = {
   auth: {
   clientId: "79922eb7-096e-46dc-8aa9-af759282e833", // Azure AD app client ID
   authority: "https://login.microsoftonline.com/common", // Azure AD tenant (multi-tenant)
-  redirectUri: "https://webui-test.vercel.app/api/auth-microsoft-callback", // For Vercel deployment
+  redirectUri: window.location.origin + "/", // Use current origin for redirect
   },
   cache: {
     cacheLocation: "sessionStorage",
     storeAuthStateInCookie: false,
   },
+  system: {
+    allowNativeBroker: false, // Disable native broker for Teams compatibility
+    loggerOptions: {
+      logLevel: 1, // Error level logging
+    }
+  }
 };
 
 export const azureScopes = ["User.Read"]; // Example Graph scope

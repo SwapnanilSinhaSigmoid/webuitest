@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "1.0.0",
+  "id": "79922eb7-096e-46dc-8aa9-af759282e833",
+  "developer": {
+    "name": "SSO Sample Developer",
+    "websiteUrl": "https://webui-test.vercel.app",
+    "privacyUrl": "https://webui-test.vercel.app/privacy",
+    "termsOfUseUrl": "https://webui-test.vercel.app/terms"
+  },
+  "icons": {
+    "color": "icon-color.png",
+    "outline": "icon-outline.png"
+  },
+  "name": {
+    "short": "SSO Sample",
+    "full": "Teams SSO Authentication Sample"
+  },
+  "description": {
+    "short": "Sample app demonstrating SSO in Teams",
+    "full": "A sample application that demonstrates Single Sign-On (SSO) authentication in Microsoft Teams using Azure AD"
+  },
+  "accentColor": "#FFFFFF",
+  "staticTabs": [
+    {
+      "entityId": "index",
+      "name": "SSO Login",
+      "contentUrl": "https://webui-test.vercel.app",
+      "websiteUrl": "https://webui-test.vercel.app",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": [
+    "webui-test.vercel.app",
+    "login.microsoftonline.com",
+    "graph.microsoft.com"
+  ],
+  "webApplicationInfo": {
+    "id": "79922eb7-096e-46dc-8aa9-af759282e833",
+    "resource": "api://webui-test.vercel.app/79922eb7-096e-46dc-8aa9-af759282e833"
+  }
+}

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { msalConfig, API_BASE, azureScopes } from "./authConfig";
 import SSOSelector from "./SSOSelector";
 import EmailModal from "./EmailModal";
+import ErrorBoundary from "./ErrorBoundary";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { initializeIcons, Stack, Text, Spinner, MessageBar, MessageBarType } from "@fluentui/react";
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
@@ -63,11 +64,25 @@ function AuthShell() {
   useEffect(() => {
     async function detectTeams() {
       try {
-        microsoftTeams = await import("@microsoft/teams-js");
-        microsoftTeams.app.initialize().then(() => {
-          microsoftTeams.app.getContext().then(() => setIsInTeams(true)).catch(() => setIsInTeams(false));
-        }).catch(() => setIsInTeams(false));
-      } catch {
+        // Check if we're already in an iframe (Teams)
+        const inIframe = window.self !== window.top;
+        
+        if (inIframe) {
+          try {
+            microsoftTeams = await import("@microsoft/teams-js");
+            await microsoftTeams.app.initialize();
+            const context = await microsoftTeams.app.getContext();
+            console.log("Teams context:", context);
+            setIsInTeams(true);
+          } catch (teamsError) {
+            console.warn("Teams initialization failed:", teamsError);
+            setIsInTeams(false);
+          }
+        } else {
+          setIsInTeams(false);
+        }
+      } catch (error) {
+        console.warn("Teams detection failed:", error);
         setIsInTeams(false);
       } finally {
         setLoading(false);
@@ -103,44 +118,91 @@ function AuthShell() {
     }
   }, []);
 
-  // MSAL instance
-  const msalInstance = React.useMemo(() => new PublicClientApplication(msalConfig), []);
+  // MSAL instance with proper initialization
+  const [msalInstance, setMsalInstance] = useState(null);
+  
+  useEffect(() => {
+    const initMsal = async () => {
+      try {
+        const instance = new PublicClientApplication(msalConfig);
+        await instance.initialize();
+        setMsalInstance(instance);
+      } catch (error) {
+        console.error("MSAL initialization failed:", error);
+        setAuthState({ status: "error", error: "Failed to initialize authentication", user: null });
+      }
+    };
+    initMsal();
+  }, []);
 
   // Handle SSO selection
   const handleSSOSelect = useCallback(async (provider) => {
     setSelectedProvider(provider);
     setAuthState({ status: "loading", error: null, user: null });
+    
     if (provider.id === "microsoft") {
+      if (!msalInstance) {
+        setAuthState({ status: "error", error: "Authentication not initialized", user: null });
+        return;
+      }
+      
       if (isInTeams) {
-        // For Teams, try popup first, fall back to redirect if popup fails
+        // For Teams, use Teams SSO API instead of MSAL
         try {
-          await msalInstance.initialize();
-          try {
-            // Try popup first (works in Teams web)
-            const loginResponse = await msalInstance.loginPopup({ scopes: azureScopes });
-            setAuthState({ status: "signedin", error: null, user: loginResponse.account });
-            navigate('/app');
-          } catch (popupError) {
-            // If popup fails (Teams desktop), use redirect
-            console.log("Popup failed, trying redirect:", popupError);
-            await msalInstance.loginRedirect({ 
-              scopes: azureScopes,
-              redirectUri: window.location.origin + "/api/auth-microsoft-callback"
-            });
+          if (!microsoftTeams) {
+            throw new Error("Teams SDK not available");
           }
-        } catch (err) {
-          console.error("Teams MSAL error:", err);
-          setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
+          
+          // First try to get a token silently
+          const token = await microsoftTeams.authentication.getAuthToken({
+            resources: ["https://graph.microsoft.com"],
+            silent: false
+          });
+          
+          // Decode the token to get user info
+          const decoded = jwtDecode(token);
+          const userInfo = {
+            username: decoded.preferred_username || decoded.upn || decoded.email,
+            name: decoded.name || decoded.given_name + " " + decoded.family_name,
+            email: decoded.preferred_username || decoded.upn || decoded.email
+          };
+          
+          setAuthState({ status: "signedin", error: null, user: userInfo });
+          navigate('/app');
+        } catch (teamsError) {
+          console.error("Teams SSO error:", teamsError);
+          // Fallback to MSAL if Teams SSO fails
+          if (msalInstance) {
+            try {
+              const loginRequest = {
+                scopes: azureScopes,
+                prompt: "select_account"
+              };
+              
+              const loginResponse = await msalInstance.loginPopup(loginRequest);
+              setAuthState({ status: "signedin", error: null, user: loginResponse.account });
+              navigate('/app');
+            } catch (msalError) {
+              setAuthState({ status: "error", error: "Authentication failed: " + (teamsError.message || msalError.message), user: null });
+            }
+          } else {
+            setAuthState({ status: "error", error: "Teams authentication failed: " + teamsError.message, user: null });
+          }
         }
       } else {
-        // Use MSAL for browser
+        // Use MSAL for browser with popup to avoid iframe issues
         try {
-          await msalInstance.initialize();
-          const loginResponse = await msalInstance.loginPopup({ scopes: azureScopes });
+          const loginRequest = {
+            scopes: azureScopes,
+            prompt: "select_account"
+          };
+          
+          const loginResponse = await msalInstance.loginPopup(loginRequest);
           setAuthState({ status: "signedin", error: null, user: loginResponse.account });
           navigate('/app');
         } catch (err) {
-          setAuthState({ status: "error", error: err.message, user: null });
+          console.error("Browser MSAL error:", err);
+          setAuthState({ status: "error", error: err.message || "Authentication failed", user: null });
         }
       }
     } else if (provider.id === "google") {
@@ -164,7 +226,7 @@ function AuthShell() {
           }
         };
         window.addEventListener('message', handler);
-        const checkClosed = setInterval(() => { if (popup?.closed) { clearInterval(checkClosed); window.removeEventListener('message', handler); } }, 500);
+        const checkClosed = setInterval(() => { if (popup?.closed) { clearInterval(checkClosed); window.removeEventListener('message', handler); setAuthState({ status: 'signedout', error: null, user: null }); } }, 500);
       } catch (e) {
         setAuthState({ status: 'error', error: e.message, user: null });
       }
@@ -189,25 +251,26 @@ function AuthShell() {
           }
         };
         window.addEventListener('message', handler);
-        const checkClosed = setInterval(() => { if (popup?.closed) { clearInterval(checkClosed); window.removeEventListener('message', handler); } }, 500);
+        const checkClosed = setInterval(() => { if (popup?.closed) { clearInterval(checkClosed); window.removeEventListener('message', handler); setAuthState({ status: 'signedout', error: null, user: null }); } }, 500);
       } catch (e) {
         setAuthState({ status: 'error', error: e.message, user: null });
       }
     } else if (provider.id === "email") {
       // Open email modal instead of browser prompt for Teams compatibility
       setIsEmailModalOpen(true);
+      setAuthState({ status: "signedout", error: null, user: null }); // Reset loading state
     } else {
-      // Simulate other SSO providers (Google, GitHub)
+      // Simulate other SSO providers (fallback)
       setTimeout(() => {
         setAuthState({ status: "signedin", error: null, user: { name: provider.name + " User", email: provider.id + "@example.com" } });
         navigate('/app');
       }, 1000);
     }
-  }, [isInTeams, msalInstance]);
+  }, [isInTeams, msalInstance, navigate]);
 
-  // Handle redirect response for Teams authentication
+  // Handle redirect response for browser authentication only
   useEffect(() => {
-    if (isInTeams && msalInstance) {
+    if (!isInTeams && msalInstance) {
       msalInstance.handleRedirectPromise().then((response) => {
         if (response) {
           setAuthState({ status: "signedin", error: null, user: response.account });
@@ -224,11 +287,16 @@ function AuthShell() {
   const handleSignOut = useCallback(() => {
     setAuthState({ status: "signedout", error: null, user: null });
     setSelectedProvider(null);
-    if (selectedProvider?.id === "microsoft" && !isInTeams) {
-      msalInstance.initialize().then(() => msalInstance.logoutPopup());
+    
+    if (selectedProvider?.id === "microsoft") {
+      if (!isInTeams && msalInstance) {
+        msalInstance.logoutPopup().catch(console.error);
+      }
+      // For Teams, just clear local state - Teams will handle SSO session
     }
+    
     navigate('/');
-  }, [selectedProvider, isInTeams, msalInstance]);
+  }, [selectedProvider, isInTeams, msalInstance, navigate]);
 
   // Email modal handlers
   const handleEmailSubmit = useCallback((email) => {
@@ -313,12 +381,14 @@ export default function App() {
     document.title = 'Sample SSO';
   }, []);
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/*" element={<AuthShell />} />
-        <Route path="/app" element={<AuthShell />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/*" element={<AuthShell />} />
+          <Route path="/app" element={<AuthShell />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
