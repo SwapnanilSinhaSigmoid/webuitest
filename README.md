@@ -28,10 +28,12 @@ node server.js         # starts auth broker on 4000
 
 ### 3. Azure AD App Registration
 - Register an app in Azure AD (Entra ID)
+- **Set Application ID URI**: `api://79922eb7-096e-46dc-8aa9-af759282e833`
 - Add redirect URIs:
 	- `http://localhost:5173/` (for local development)
 	- `https://webui-test.vercel.app/api/auth-microsoft-callback` (for production)
-- Expose API permissions as needed
+- Add API permissions: `Microsoft Graph > User.Read`
+- For Teams SSO: Enable **Access tokens** and **ID tokens** in Authentication
 - Update `src/authConfig.js` with your `clientId` and `tenantId`
 
 #### Sample manifest.json for Teams

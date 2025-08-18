@@ -153,17 +153,24 @@ function AuthShell() {
             throw new Error("Teams SDK not available");
           }
           
-          // First try to get a token silently
+          // Request token for the specific application resource
           const token = await microsoftTeams.authentication.getAuthToken({
-            resources: ["https://graph.microsoft.com"],
-            silent: false
+            resources: [`api://79922eb7-096e-46dc-8aa9-af759282e833`],
+            silent: false,
+            claims: JSON.stringify({
+              "id_token": {
+                "login_hint": {
+                  "essential": false
+                }
+              }
+            })
           });
           
           // Decode the token to get user info
           const decoded = jwtDecode(token);
           const userInfo = {
             username: decoded.preferred_username || decoded.upn || decoded.email,
-            name: decoded.name || decoded.given_name + " " + decoded.family_name,
+            name: decoded.name || (decoded.given_name && decoded.family_name ? decoded.given_name + " " + decoded.family_name : decoded.unique_name),
             email: decoded.preferred_username || decoded.upn || decoded.email
           };
           
@@ -171,23 +178,18 @@ function AuthShell() {
           navigate('/app');
         } catch (teamsError) {
           console.error("Teams SSO error:", teamsError);
-          // Fallback to MSAL if Teams SSO fails
-          if (msalInstance) {
-            try {
-              const loginRequest = {
-                scopes: azureScopes,
-                prompt: "select_account"
-              };
-              
-              const loginResponse = await msalInstance.loginPopup(loginRequest);
-              setAuthState({ status: "signedin", error: null, user: loginResponse.account });
-              navigate('/app');
-            } catch (msalError) {
-              setAuthState({ status: "error", error: "Authentication failed: " + (teamsError.message || msalError.message), user: null });
-            }
+          // Better error handling for common Teams SSO issues
+          let errorMessage = "Teams authentication failed";
+          if (teamsError.message.includes("consent_required")) {
+            errorMessage = "Admin consent required for this application";
+          } else if (teamsError.message.includes("invalid_resource")) {
+            errorMessage = "App not properly configured in Azure AD";
+          } else if (teamsError.message.includes("interaction_required")) {
+            errorMessage = "User interaction required - please try again";
           } else {
-            setAuthState({ status: "error", error: "Teams authentication failed: " + teamsError.message, user: null });
+            errorMessage = "Teams authentication failed: " + teamsError.message;
           }
+          setAuthState({ status: "error", error: errorMessage, user: null });
         }
       } else {
         // Use MSAL for browser - prefer redirect for production, popup for local dev
